@@ -15,7 +15,8 @@
 typedef enum {
 	STATUS_SUCCESS,
 	STATUS_NOT_SUPPORTED = -1,
-	STATUS_UNKNOWN_ERROR = -2
+	STATUS_OUT_OF_RESOURCES = -2,
+	STATUS_UNKNOWN_ERROR = -3
 } status_t;
 
 #define LOGLEVEL_VERBOSE	0		// Debug information

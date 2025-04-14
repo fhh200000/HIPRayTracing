@@ -16,5 +16,6 @@ static void teminatate()
 int main()
 {
 	InitializeDevice();
-	CreateMainWindow(teminatate);
+	CreateMainWindow();
+	EnterMainLoop(teminatate);
 }
