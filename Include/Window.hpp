@@ -18,8 +18,10 @@
 #define WINDOW_HEIGHT 720
 
 // Callback functions of termination signal.
-
 typedef void (*temination_signal_handler_t)();
+
+// Exposed host-side image buffer.
+extern pixel_t *HostImageBuffer;
 
 status_t CreateMainWindow();
 status_t DestroyMainWindow();

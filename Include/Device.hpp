@@ -11,7 +11,7 @@
 #include <Common.hpp>
 
 status_t InitializeDevice();
-
+status_t CalculateOneFrame();
 status_t DestroyDevice();
 
 #endif

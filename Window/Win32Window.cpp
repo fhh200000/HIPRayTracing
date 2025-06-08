@@ -9,11 +9,14 @@
 #include <Windows.h>
 #undef ERROR	// Bug WA:"ERROR redefined"
 #include <Window.hpp>
+#include <Device.hpp>
 
 static HINSTANCE application_handle;
 static ATOM registered_class;
 static HWND hwnd;
 static BOOL window_exiting;
+
+pixel_t* HostImageBuffer;
 
 static LRESULT CALLBACK MainWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -73,6 +76,8 @@ status_t CreateMainWindow()
         return STATUS_UNKNOWN_ERROR;
     }
     UpdateWindow(hwnd);
+    // TODO: Create image buffer to Host Buffer.
+    HostImageBuffer = new pixel_t[WINDOW_WIDTH * WINDOW_HEIGHT];
 	return STATUS_SUCCESS;
 }
 
@@ -80,6 +85,7 @@ status_t DestroyMainWindow()
 {
     BOOL result;
     result = UnregisterClass(reinterpret_cast<LPCWSTR>(registered_class), application_handle);
+    delete[] HostImageBuffer;
 	return STATUS_SUCCESS;
 }
 
@@ -106,7 +112,7 @@ status_t EnterMainLoop(temination_signal_handler_t handler)
             DispatchMessage(&msg);
         }
         if (window_exiting != TRUE) {
-            // TODO: Draw message
+            CalculateOneFrame();
         }
 
     }
