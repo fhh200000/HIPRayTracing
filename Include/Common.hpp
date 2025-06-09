@@ -58,4 +58,11 @@ do { \
 #define __attribute__(x) // MSVC Intellisense do not know __attribute__
 #endif
 
+#ifndef __HIP__ // For clangd server
+struct dim3;
+extern dim3 threadIdx;
+extern dim3 blockIdx;
+extern dim3 blockDim;
+#endif
+
 #endif

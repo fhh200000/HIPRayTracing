@@ -43,7 +43,7 @@ status_t InitializeDevice()
             WARNING("Cannot initialize Device #%d. Skip\n", iterator);
         }
         current_rank_score = (uint64_t)current_device_prop.maxThreadsPerMultiProcessor * current_device_prop.clockRate;
-        VERBOSE("\t#%d %s:%llu\n", iterator, current_device_prop.name, current_rank_score);
+        VERBOSE("\t#%d %s:%lu\n", iterator, current_device_prop.name, current_rank_score);
         if (current_rank_score > best_rank_score) {
             best_rank_score = current_rank_score;
             best_id = iterator - 1;
@@ -56,8 +56,8 @@ status_t InitializeDevice()
     }
 
     // Best GPU chosen!
-    hipGetDeviceProperties(&current_device_prop, best_id);
-    hipSetDevice(best_id);
+    hip_result = hipGetDeviceProperties(&current_device_prop, best_id);
+    hip_result = hipSetDevice(best_id);
 
     INFO("Selected HIP device : %s(%s)\n", current_device_prop.name, current_device_prop.integrated?"iGPU":"dGPU");
 
