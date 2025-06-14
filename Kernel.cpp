@@ -37,18 +37,19 @@ __device__ constexpr point3 pixel00_loc = vec3 (
     viewport_upper_left.z + 0.5 * (pixel_delta_u.z + pixel_delta_v.z)
 );
 
+__device__ constexpr float maximum_color_depth = WINDOW_COLOR_DEPTH-0.01f;
 
 __device__ float hit_sphere(const point3& center, float radius, const ray& r) {
     vec3 oc = center - r.origin;
-    float a = dot(r.direction, r.direction);
-    float b = -2.0 * dot(r.direction, oc);
-    float c = dot(oc, oc) - radius*radius;
-    float discriminant = b*b - 4*a*c;
+    float a = r.direction.length_squared();
+    float h = dot(r.direction, oc);
+    float c = oc.length_squared() - radius*radius;
+    float discriminant = h*h - a*c;
 
     if (discriminant < 0) {
         return -1.0f;
     } else {
-        return (-b - __fsqrt_rn(discriminant) ) / (2.0*a);
+        return (h - __fsqrt_rn(discriminant)) / a;
     }
 }
 
@@ -72,10 +73,8 @@ __global__ void RayTracingKernel(pixel_t *output_buffer)
     ray r(camera_center, ray_direction);
 
     color pixel_color = ray_color(r);
-    output_buffer[index].R = (uint8_t)(255.99f*pixel_color.x);
-    output_buffer[index].G = (uint8_t)(255.99f*pixel_color.y);
-    output_buffer[index].B = (uint8_t)(255.99f*pixel_color.z);
+    output_buffer[index].R = maximum_color_depth*pixel_color.x;
+    output_buffer[index].G = maximum_color_depth*pixel_color.y;
+    output_buffer[index].B = maximum_color_depth*pixel_color.z;
 
 }
-
-

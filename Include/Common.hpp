@@ -22,12 +22,27 @@ typedef enum {
 
 #pragma pack(push, 1)
 
+#ifndef WINDOW_COLOR_DEPTH
+#define WINDOW_COLOR_DEPTH 256
+#endif
+
+#if WINDOW_COLOR_DEPTH==256
 typedef struct {
 	uint8_t B;
 	uint8_t G;
 	uint8_t R;
 	uint8_t A;
 } pixel_t;
+#elif WINDOW_COLOR_DEPTH == 1024
+typedef struct {
+	unsigned B:10;
+	unsigned G:10;
+	unsigned R:10;
+	unsigned A:2;
+} pixel_t;
+#else
+#error Unknown color depth!
+#endif
 
 #pragma pack(pop)
 
