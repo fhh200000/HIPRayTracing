@@ -15,7 +15,7 @@ public:
     float radius;
     constexpr __device__ sphere() : center (vec3()), radius (0.f) {}
     constexpr __device__ sphere(const point3& center, float radius) : center(center), radius(radius>0.f?radius:0.f){}
-    __device__ bool hit(const ray & r, float ray_tmin, float ray_tmax, hit_record & rec) const override {
+    __device__ bool hit(const ray & r, float ray_tmin, float ray_tmax, hit_record & rec, rocrand_state_xorwow *rand_state) const override {
         vec3 oc = center - r.origin;
         float a = r.direction.length_squared();
         float h = dot(r.direction, oc);

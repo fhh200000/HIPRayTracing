@@ -9,6 +9,8 @@
 #define VEC3_HPP
 
 #include <hip/hip_runtime.h>
+#include <rocrand/rocrand_xorwow.h>
+#include <rocrand_normal.h>
 
 typedef struct vec3 {
     float x;
@@ -42,6 +44,19 @@ typedef struct vec3 {
 
     __device__ float length_squared() const {
         return  __fmaf_rn(x,x, __fmaf_rn(y,y, __fmul_rn(z,z)));
+    }
+
+    static __device__ vec3 random(rocrand_state_xorwow *rand) {
+        return vec3(rocrand_normal(rand), rocrand_normal(rand), rocrand_normal(rand));
+    }
+
+    static __device__ vec3 random(float min, float max, rocrand_state_xorwow *rand) {
+        float range = max - min;
+        return vec3 (
+                __fmaf_rn(rocrand_normal(rand),range, -min),
+                __fmaf_rn(rocrand_normal(rand),range, -min),
+                __fmaf_rn(rocrand_normal(rand),range, -min)
+        );
     }
 } vec3, color, point3;
 
@@ -83,6 +98,23 @@ __device__ inline vec3 cross(const vec3& u, const vec3& v) {
 
 __device__ inline vec3 unit_vector(const vec3& v) {
     return v / v.length();
+}
+
+__device__ inline vec3 random_unit_vector(rocrand_state_xorwow *rand) {
+    while (true) {
+        auto p = vec3::random(-1,1, rand);
+        auto lensq = p.length_squared();
+        if (1e-8 < lensq && lensq <= 1)
+            return p / sqrt(lensq);
+    }
+}
+
+__device__ inline vec3 random_on_hemisphere(const vec3& normal, rocrand_state_xorwow *rand) {
+    vec3 on_unit_sphere = random_unit_vector(rand);
+    if (dot(on_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
+        return on_unit_sphere;
+    else
+        return -on_unit_sphere;
 }
 
 #endif

@@ -14,8 +14,8 @@
 #define WINDOW_TITLE L"HIP Ray Tracing Window"
 #endif
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
+#define WINDOW_WIDTH 3840
+#define WINDOW_HEIGHT 2160
 
 // Callback functions of termination signal.
 typedef void (*temination_signal_handler_t)();
