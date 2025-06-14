@@ -44,6 +44,10 @@ typedef struct {
 #error Unknown color depth!
 #endif
 
+#ifndef SAMPLES_PER_PIXEL
+#define SAMPLES_PER_PIXEL 100
+#endif
+
 #pragma pack(pop)
 
 #define LOGLEVEL_VERBOSE	0		// Debug information

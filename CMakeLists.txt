@@ -14,9 +14,15 @@ add_compile_definitions("-DLOGLEVEL_ENABLED=0")
 
 message(CHECK_START "Finding HIP")
 find_package(hip REQUIRED)
-get_filename_component(hip_root ${hip_INCLUDE_DIRS} DIRECTORY)
-message(CHECK_PASS "${hip_VERSION}, at ${hip_root}" )
-include_directories(${hip_INCLUDE_DIRS})
+find_package(rocrand REQUIRED)
+
+get_filename_component(hip_root ${hip_INCLUDE_DIR} DIRECTORY)
+get_filename_component(rocrand_root ${rocRAND_INCLUDE_DIR} DIRECTORY)
+
+message(CHECK_PASS "HIP ${hip_VERSION} at ${hip_root}, rocRAND ${rocrand_VERSION} at ${rocrand_root}")
+include_directories(${hip_INCLUDE_DIR})
+include_directories(${rocRAND_INCLUDE_DIR})
+
 enable_language(HIP)
 
 
@@ -40,7 +46,7 @@ elseif (UNIX)
 endif()
 
 add_executable(HIPRayTracing Device.cpp Kernel.cpp Main.cpp ${window_implementation_file})
-target_link_libraries(HIPRayTracing PRIVATE hip::host)
+target_link_libraries(HIPRayTracing PRIVATE hip::host ${rocrand_LIBRARIES})
 
 set_source_files_properties(Kernel.cpp PROPERTIES LANGUAGE HIP)
 set_source_files_properties(Device.cpp PROPERTIES LANGUAGE HIP)

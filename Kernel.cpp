@@ -9,6 +9,10 @@
 #include <Window.hpp>
 #include <Vec3.hpp>
 #include <Ray.hpp>
+#include <Hittable.hpp>
+#include <Sphere.hpp>
+#include <rocrand/rocrand_xorwow.h>
+#include <rocrand_normal.h>
 
 // Camera
 __device__ constexpr float focal_length = 1.0;
@@ -39,42 +43,64 @@ __device__ constexpr point3 pixel00_loc = vec3 (
 
 __device__ constexpr float maximum_color_depth = WINDOW_COLOR_DEPTH-0.01f;
 
-__device__ float hit_sphere(const point3& center, float radius, const ray& r) {
-    vec3 oc = center - r.origin;
-    float a = r.direction.length_squared();
-    float h = dot(r.direction, oc);
-    float c = oc.length_squared() - radius*radius;
-    float discriminant = h*h - a*c;
+__device__ constexpr sphere world[] = {
+    sphere(point3(0,0,-1), 0.5),
+    sphere(point3(0,-100.5,-1), 100),
+};
 
-    if (discriminant < 0) {
-        return -1.0f;
-    } else {
-        return (h - __fsqrt_rn(discriminant)) / a;
+__device__ bool world_hit(const ray& r, hit_record& rec)
+{
+    float ray_tmin = 0;
+    float ray_tmax = INFINITY;
+    hit_record temp_rec;
+    bool hit_anything = false;
+    auto closest_so_far = ray_tmax;
+
+    for (const auto& object : world) {
+        if (object.hit(r, ray_tmin, closest_so_far, temp_rec)) {
+            hit_anything = true;
+            closest_so_far = temp_rec.t;
+            rec = temp_rec;
+        }
     }
+
+    return hit_anything;
 }
 
 __device__ color ray_color(const ray& r) {
-    float t = hit_sphere(point3(0,0,-1), 0.5, r);
-    if (t > 0.0) {
-        vec3 N = unit_vector(r.at(t) - vec3(0,0,-1));
-        return 0.5*color(N.x+1, N.y+1, N.z+1);
+    hit_record rec;
+    if (world_hit(r, rec)) {
+        return 0.5 * (rec.normal + color(1,1,1));
     }
     vec3 unit_direction = unit_vector(r.direction);
     float a = 0.5f*(unit_direction.y + 1.0f);
     return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
 }
 
+__device__ __inline__ vec3 sample_square(rocrand_state_xorwow *state) {
+    // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+    return vec3(rocrand_normal(state)-0.5, rocrand_normal(state)-0.5, 0);
+}
+
 __global__ void RayTracingKernel(pixel_t *output_buffer)
 {
     unsigned int index = __fmaf_rn(__fmaf_rn(blockIdx.y, blockDim.y, threadIdx.y), WINDOW_WIDTH, __fmaf_rn(blockIdx.x, blockDim.x, threadIdx.x));
 
-    point3 pixel_center = pixel00_loc + (__fmaf_rn(blockIdx.x, blockDim.x, threadIdx.x) * pixel_delta_u) + (__fmaf_rn(blockIdx.y, blockDim.y, threadIdx.y) * pixel_delta_v);
-    vec3 ray_direction = pixel_center - camera_center;
-    ray r(camera_center, ray_direction);
+    rocrand_state_xorwow rand_state;
+    rocrand_init(index, 0, 0, &rand_state);
 
-    color pixel_color = ray_color(r);
-    output_buffer[index].R = maximum_color_depth*pixel_color.x;
-    output_buffer[index].G = maximum_color_depth*pixel_color.y;
-    output_buffer[index].B = maximum_color_depth*pixel_color.z;
+    point3 pixel_center = pixel00_loc + (__fmaf_rn(blockIdx.x, blockDim.x, threadIdx.x) * pixel_delta_u) + (__fmaf_rn(blockIdx.y, blockDim.y, threadIdx.y) * pixel_delta_v);
+    color pixel_color;
+
+    for (size_t it=0; it<SAMPLES_PER_PIXEL;++it) {
+        vec3 random_square = sample_square(&rand_state);
+        vec3 sampled_center = pixel_center + random_square.x*pixel_delta_u + random_square.y*pixel_delta_v;
+        vec3 ray_direction = sampled_center - camera_center;
+        ray r(camera_center, ray_direction);
+        pixel_color += ray_color(r);
+    }
+    output_buffer[index].R = maximum_color_depth/SAMPLES_PER_PIXEL*pixel_color.x;
+    output_buffer[index].G = maximum_color_depth/SAMPLES_PER_PIXEL*pixel_color.y;
+    output_buffer[index].B = maximum_color_depth/SAMPLES_PER_PIXEL*pixel_color.z;
 
 }
